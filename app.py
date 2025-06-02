@@ -164,24 +164,17 @@ if authentication_status:
             col1, col2, col3, col4 = st.columns(4)
             with col1:
                 manager = st.selectbox(r'$\textsf{\normalsize Менеджер}$', [name])
+
+                # Определяем доступные филиалы для каждого менеджера
                 district_options = {
-                    "Болтабоев Аслиддин": "Джаббор Расулов",
-                    "Файзиев Тимур": "Джаббор Расулов",
-                    "Болтабоев Аслиддин": "Спитамен",
-                    "Файзиев Тимур": "Спитамен",
-                    "Болтабоев Аслиддин": "Пенджикент",
-                    "Файзиев Тимур": "Пенджикент",
-                    "Болтабоев Аслиддин": "Худжанд",
-                    "Файзиев Тимур": "Худжанд"
+                    "Болтабоев Аслиддин": ["Джаббор Расулов", "Спитамен"],
+                    "Файзиев Тимур": ["Джаббор Расулов", "Спитамен"]
                 }
 
-                default_district = "Душанбе"  # Default district if no match found
+                # Получаем список доступных филиалов для текущего менеджера
+                available_districts = district_options.get(manager, ["Душанбе"])
 
-                district = district_options.get(manager, default_district)
-
-                # # Use district variable in your Streamlit app
-                # st.write(rf'$\textsf{{\normalsize Филиал}}$: {district}')
-                st.selectbox(r'$\textsf{\normalsize Филиал}$', [district])
+                district = st.selectbox(r'$\textsf{\normalsize Филиал}$', available_districts)
                 name = st.text_input(r'$\textsf{\normalsize ФИО}$', '')
                 # surname = st.text_input(r'$\textsf{\normalsize Фамилия}$', '')
                 age = st.number_input(r'$\textsf{\normalsize Возраст}$', value=24, step=1)
