@@ -7,8 +7,12 @@ import streamlit as st
 import pandas as pd
 import joblib
 import gspread
+
 # Загрузка модели
+
 model = joblib.load('model.pkl')
+
+
 # Функция для генерации PDF
 from datetime import datetime
 from fpdf import FPDF
