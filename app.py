@@ -149,19 +149,7 @@ if authentication_status:
                         file_name="test.pdf",
                         mime='application/octet-stream')
 
-    st.markdown(
-        """
-        <div style='text-align: center; margin-bottom: 30px;'>
-            <h1 style='color: #d32f2f; font-size: 3em; font-weight: bold; margin: 0; font-family: Arial, sans-serif;'>
-                МАНЗИЛСОЗ
-            </h1>
-            <h3 style='color: #666; margin: 0; font-style: italic; font-family: Arial, sans-serif;'>
-                СТРОИТЕЛЬНЫЕ МАТЕРИАЛЫ
-            </h3>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
+    st.image("logo manzilsoz.png", use_column_width=False, width=150)
     # Ввод данных с использованием инпутов
     st.title('Модель скоринга')
 
