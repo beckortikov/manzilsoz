@@ -241,10 +241,10 @@ if authentication_status:
             gc = authenticate_gspread()
 
             # Create a new Google Sheets spreadsheet
-            sh = gc.open("KreditMarket")
+            sh = gc.open("Manzilsoz")
 
             # Select the first sheet (index 0)
-            worksheet = sh.worksheet("Scoring")
+            worksheet = sh.worksheet("ScoringDB")
 
             # Check if there's any content in the worksheet
             existing_data = worksheet.get_all_values()
