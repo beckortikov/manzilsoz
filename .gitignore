@@ -1,0 +1,19 @@
+logs.log
+tj_consolidate_pycaret.pkl
+generate.py
+.env
+__pycache__/
+logs/
+generate.py
+
+# Secret files - Google Cloud credentials
+credits_mobi.json
+*.json
+!config.json
+!package.json
+
+# Other sensitive files
+hashed_pw.pkl
+*.key
+*.pem
+*.p12
