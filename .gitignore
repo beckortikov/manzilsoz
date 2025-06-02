@@ -13,7 +13,6 @@ credits_mobi.json
 !package.json
 
 # Other sensitive files
-hashed_pw.pkl
 *.key
 *.pem
 *.p12
