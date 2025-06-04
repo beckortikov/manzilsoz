@@ -54,35 +54,46 @@ if authentication_status:
             background-color: white;
         }
         .block-container {
-                    padding-top: 1rem;
-                    padding-bottom: 0rem;
-                    padding-left: 5rem;
-                    padding-right: 5rem;
-                }
-        /* Уменьшаем размер полей ввода */
-        .stTextInput input {
-            padding: 0.3rem;
-            font-size: 0.8rem;
-            line-height: 1.2;
+            padding-top: 1rem;
+            padding-bottom: 0rem;
+            padding-left: 5rem;
+            padding-right: 5rem;
         }
-        .stNumberInput input {
-            padding: 0.3rem;
-            font-size: 0.8rem;
-            line-height: 1.2;
+        /* Уменьшаем размеры всех input элементов */
+        div[data-baseweb="select"] {
+            margin-top: -1rem;
         }
-        .stSelectbox select {
-            padding: 0.3rem;
-            font-size: 0.8rem;
-            line-height: 1.2;
+        div[data-baseweb="select"] > div {
+            padding-top: 0.2rem !important;
+            padding-bottom: 0.2rem !important;
+        }
+        div[data-baseweb="input"] {
+            margin-top: -1rem;
+        }
+        div[data-baseweb="input"] > div {
+            padding-top: 0.2rem !important;
+            padding-bottom: 0.2rem !important;
+        }
+        .stNumberInput div {
+            padding-top: 0.2rem !important;
+            padding-bottom: 0.2rem !important;
+        }
+        .stSelectbox div {
+            padding-top: 0.2rem !important;
+            padding-bottom: 0.2rem !important;
         }
         /* Уменьшаем отступы между элементами */
         .element-container {
-            margin-bottom: 0.5rem;
+            margin-bottom: -0.5rem;
         }
-        /* Уменьшаем размер меток */
-        .stMarkdown p {
-            font-size: 0.9rem;
-            margin-bottom: 0.3rem;
+        /* Уменьшаем размер заголовков полей */
+        .css-10trblm {
+            margin-bottom: 0rem;
+            font-size: 0.8rem !important;
+        }
+        /* Уменьшаем размер текста в полях */
+        .css-1d3z3hw {
+            font-size: 0.8rem !important;
         }
     </style>
     """,
@@ -310,31 +321,24 @@ if authentication_status:
 
         # Предсказание
         st.subheader('Результат:')
-        if kredit is not None:
-            if kredit == "Да":
-                st.error(r'$\textsf{\Large Отказано! 😞}$')
+        if prediction is not None:
+            st.write(f'Вероятность возврата: {round(prediction[0]*100, 2)}%')
+            if prediction > 1 - 0.15:
+                if_success="Одобрено!"
+                htmlstr1=f"""<p style='background-color:green;
+                                                            color:white;
+                                                            font-size:35px;
+                                                            border-radius:3px;
+                                                            line-height:60px;
+                                                            padding-left:17px;
+                                                            opacity:0.6'>
+                                                            {if_success}</style>
+                                                            <br></p>"""
+                st.markdown(htmlstr1,unsafe_allow_html=True)
+                st.balloons()
+                generate_pdf(input_data, document_number, current_date)
+                duplicate_to_gsheet(input_data)
             else:
-                if prediction is not None:
-                    st.write(f'Вероятность возврата: {round(prediction[0]*100, 2)}%')
-                    if prediction > 1 - 0.15:
-                        if_success="Одобрено!"
-                        htmlstr1=f"""<p style='background-color:green;
-                                                                color:white;
-                                                                font-size:35px;
-                                                                border-radius:3px;
-                                                                line-height:60px;
-                                                                padding-left:17px;
-                                                                opacity:0.6'>
-                                                                {if_success}</style>
-                                                                <br></p>"""
-                        st.markdown(htmlstr1,unsafe_allow_html=True)
-                        # st.success(r'$\textsf{\Large }$')
-                        st.balloons()
-                        generate_pdf(input_data, document_number, current_date)
-                        duplicate_to_gsheet(input_data)
-                    else:
-                        st.error(r'$\textsf{\Large Отказано! 😞}$')
-                        generate_pdf(input_data, document_number, current_date)
-                        duplicate_to_gsheet(input_data)
-
-                    # generate_pdf(input_data, document_number, current_date)
+                st.error(r'$\textsf{\Large Отказано! 😞}$')
+                generate_pdf(input_data, document_number, current_date)
+                duplicate_to_gsheet(input_data)
