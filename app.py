@@ -169,6 +169,16 @@ if authentication_status:
             col1, col2, col3, col4 = st.columns(4)
             with col1:
                 manager = st.selectbox(r'$\textsf{\normalsize Менеджер}$', [name])
+
+                # Определяем доступные филиалы для каждого менеджера
+                district_options = {
+                    "Болтабоев Аслиддин": ["Джаббор Расулов", "Спитамен"],
+                    "Файзиев Тимур": ["Джаббор Расулов", "Спитамен"]
+                }
+
+                # Получаем список доступных филиалов для текущего менеджера
+                available_districts = district_options.get(manager, ["Душанбе"])
+
                 district = st.selectbox(r'$\textsf{\normalsize Филиал}$', available_districts)
                 name = st.text_input(r'$\textsf{\normalsize ФИО}$', '')
                 phone = st.text_input(r'$\textsf{\normalsize Телефон номер}$', value=None, placeholder="928009292")
