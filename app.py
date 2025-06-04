@@ -59,6 +59,31 @@ if authentication_status:
                     padding-left: 5rem;
                     padding-right: 5rem;
                 }
+        /* Уменьшаем размер полей ввода */
+        .stTextInput input {
+            padding: 0.3rem;
+            font-size: 0.8rem;
+            line-height: 1.2;
+        }
+        .stNumberInput input {
+            padding: 0.3rem;
+            font-size: 0.8rem;
+            line-height: 1.2;
+        }
+        .stSelectbox select {
+            padding: 0.3rem;
+            font-size: 0.8rem;
+            line-height: 1.2;
+        }
+        /* Уменьшаем отступы между элементами */
+        .element-container {
+            margin-bottom: 0.5rem;
+        }
+        /* Уменьшаем размер меток */
+        .stMarkdown p {
+            font-size: 0.9rem;
+            margin-bottom: 0.3rem;
+        }
     </style>
     """,
     unsafe_allow_html=True,
