@@ -204,7 +204,7 @@ if authentication_status:
                     ['Нет опыта', 'до 1 года', 'от 1 до 3 лет', 'от 3 до 5 лет', 'от 5 лет'])
                 dependents = st.selectbox(r'$\textsf{\normalsize Иждивенцы}$', [1, 2, 3, 4, 5])
 
-            if st.button('Получить результат', type="primary"):
+            if st.button('Рассчитать скоринг', type="primary"):
                 current_date = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                 document_number = f'Doc_{current_date.replace(" ", "_").replace(":", "_")}'
                 mapping_dis = {
@@ -231,99 +231,6 @@ if authentication_status:
                 prediction = model.predict_proba(input_data)[:, 0]
 
 
-                input_data['Manager'] = manager
-                input_data['district'] = district
-                input_data['name'] = name
-                input_data['phone'] = phone
-                input_data['Result'] = 'Одобрено' if prediction > 1 - 0.15 else 'Отказано'
-                input_data['gender'] = gender
-                input_data['marital_status'] = marital_status
-                input_data['Probability'] = f'{round(prediction[0]*100, 2)}%'
-                input_data['Date'] = current_date
-                input_data['DocumentNumber'] = document_number
-                input_data['occupation'] = occupation
-                input_data['salary_level'] = salary_level
-                input_data['work_experience'] = work_experience
-                input_data['dependents'] = dependents
-    with top_right:
-        def authenticate_gspread():
-            # Load Google Sheets API credentials
-            from  read_json import  response_json
-            response_ = response_json()
-            sa = gspread.service_account_from_dict(response_)
-            return sa
-
-        # Function to duplicate data to Google Sheets
-        def save_to_gsheet(new_row, max_retries=3):
-            for attempt in range(max_retries):
-                try:
-                    # Authenticate with Google Sheets
-                    gc = authenticate_gspread()
-
-                    # Open the spreadsheet
-                    sh = gc.open("Manzilsoz")
-
-                    # Select the first sheet (index 0)
-                    worksheet = sh.worksheet("ScoringDB")
-
-                    # Check if there's any content in the worksheet
-                    existing_data = worksheet.get_all_values()
-
-                    # Get existing headers if they exist
-                    headers = existing_data[0] if existing_data else None
-
-                    if not headers:
-                        headers = ['Менеджер', 'Филиал', 'Телефон номер', 'ФИО', 'Возраст', 'Пол', 'Сумма кредита', 'Период',
-                                'Семейное положение', 'Количество кредитов(история)', 'Результат', 'Вероятность возврата', 'Дата',
-                                'Номер документа', 'Сфера деятельности', 'Уровень зарплаты', 'Опыт работы', 'Иждивенцы']
-                        worksheet.append_row(headers)
-
-                    # Convert the new_row DataFrame to a list and append it to the worksheet
-                    new_row = new_row[['Manager','district', 'phone', 'name', 'age', 'gender', 'amount', 'duration',
-                                    'marital_status', "credit_history_count", 'Result', 'Probability', 'Date', 'DocumentNumber',
-                                    'occupation', 'salary_level', 'work_experience', 'dependents']]
-                    new_row_list = new_row.values.tolist()
-                    worksheet.append_rows(new_row_list)
-                    return True
-                except Exception as e:
-                    if attempt == max_retries - 1:  # Last attempt
-                        st.error(f"Ошибка при сохранении данных: {str(e)}")
-                        # Сохраняем данные локально в случае ошибки
-                        backup_file = f"backup_data_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
-                        new_row.to_csv(backup_file, index=False)
-                        st.warning(f"Данные сохранены локально в файл: {backup_file}")
-                        return False
-                    time.sleep(2)  # Wait before retrying
-            return False
-
-        if st.button('Получить результат', type="primary"):
-            try:
-                current_date = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-                document_number = f'Doc_{current_date.replace(" ", "_").replace(":", "_")}'
-                mapping_dis = {
-                "Душанбе": "dushanbe",
-                "Худжанд": "khujand",
-                "Пенджикент": "panjakent",
-                "Джаббор Расулов": "j.rasulov",
-                "Спитамен": "spitamen"
-                }
-                mapping_mar = {
-                    'Женат/Замужем': 'married', 'Не женат/Не замужем':'single', 'Вдова/Вдовец':'widow/widower', 'Разведен':'divorced'
-                }
-
-                input_data = pd.DataFrame({
-                    'age': [age],
-                    'amount': [amount],
-                    'credit_history_count': [credit_history_count],
-                    'district': [mapping_dis[district]],
-                    'duration': [duration],
-                    'gender': [1 if gender == 'Мужчина' else 0],
-                    'marital_status': [mapping_mar[marital_status]],
-                })
-
-                prediction = model.predict_proba(input_data)[:, 0]
-
-                # Prepare data for saving
                 input_data['Manager'] = manager
                 input_data['district'] = district
                 input_data['name'] = name
@@ -369,10 +276,47 @@ if authentication_status:
                 except Exception as e:
                     st.error(f"Ошибка при генерации PDF: {str(e)}")
 
-            except Exception as e:
-                st.error(f"Произошла ошибка: {str(e)}")
-                # Attempt to save data even if other operations fail
-                if 'input_data' in locals():
-                    backup_file = f"error_backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
-                    input_data.to_csv(backup_file, index=False)
-                    st.warning(f"Данные сохранены локально в файл: {backup_file}")
+    with top_right:
+        def authenticate_gspread():
+            # Load Google Sheets API credentials
+            from  read_json import  response_json
+            response_ = response_json()
+            sa = gspread.service_account_from_dict(response_)
+            return sa
+
+        # Function to duplicate data to Google Sheets
+        def save_to_gsheet(new_row, max_retries=3):
+            for attempt in range(max_retries):
+                try:
+                    # Authenticate with Google Sheets
+                    gc = authenticate_gspread()
+
+                    # Open the spreadsheet
+                    sh = gc.open("Manzilsoz")
+                    worksheet = sh.worksheet("ScoringDB")
+
+                    # Check if there's any content in the worksheet
+                    existing_data = worksheet.get_all_values()
+
+                    # Get existing headers if they exist
+                    headers = existing_data[0] if existing_data else None
+
+                    if not headers:
+                        headers = ['Менеджер', 'Филиал', 'Телефон номер', 'ФИО', 'Возраст', 'Пол', 'Сумма кредита', 'Период',
+                                'Семейное положение', 'Количество кредитов(история)', 'Результат', 'Вероятность возврата', 'Дата',
+                                'Номер документа', 'Сфера деятельности', 'Уровень зарплаты', 'Опыт работы', 'Иждивенцы']
+                        worksheet.append_row(headers)
+
+                    # Convert the new_row DataFrame to a list and append it to the worksheet
+                    new_row = new_row[['Manager','district', 'phone', 'name', 'age', 'gender', 'amount', 'duration',
+                                    'marital_status', "credit_history_count", 'Result', 'Probability', 'Date', 'DocumentNumber',
+                                    'occupation', 'salary_level', 'work_experience', 'dependents']]
+                    new_row_list = new_row.values.tolist()
+                    worksheet.append_rows(new_row_list)
+                    return True
+                except Exception as e:
+                    if attempt == max_retries - 1:  # Last attempt
+                        st.error(f"Ошибка при сохранении данных: {str(e)}")
+                        return False
+                    time.sleep(2)  # Wait before retrying
+            return False
