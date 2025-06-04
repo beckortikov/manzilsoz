@@ -59,42 +59,6 @@ if authentication_status:
             padding-left: 5rem;
             padding-right: 5rem;
         }
-        /* Уменьшаем размеры всех input элементов */
-        div[data-baseweb="select"] {
-            margin-top: -1rem;
-        }
-        div[data-baseweb="select"] > div {
-            padding-top: 0.2rem !important;
-            padding-bottom: 0.2rem !important;
-        }
-        div[data-baseweb="input"] {
-            margin-top: -1rem;
-        }
-        div[data-baseweb="input"] > div {
-            padding-top: 0.2rem !important;
-            padding-bottom: 0.2rem !important;
-        }
-        .stNumberInput div {
-            padding-top: 0.2rem !important;
-            padding-bottom: 0.2rem !important;
-        }
-        .stSelectbox div {
-            padding-top: 0.2rem !important;
-            padding-bottom: 0.2rem !important;
-        }
-        /* Уменьшаем отступы между элементами */
-        .element-container {
-            margin-bottom: -0.5rem;
-        }
-        /* Уменьшаем размер заголовков полей */
-        .css-10trblm {
-            margin-bottom: 0rem;
-            font-size: 0.8rem !important;
-        }
-        /* Уменьшаем размер текста в полях */
-        .css-1d3z3hw {
-            font-size: 0.8rem !important;
-        }
     </style>
     """,
     unsafe_allow_html=True,
@@ -204,6 +168,7 @@ if authentication_status:
     with top_left:
             col1, col2, col3, col4 = st.columns(4)
             with col1:
+                # Основная информация
                 manager = st.selectbox(r'$\textsf{\normalsize Менеджер}$', [name])
 
                 # Определяем доступные филиалы для каждого менеджера
@@ -217,27 +182,30 @@ if authentication_status:
 
                 district = st.selectbox(r'$\textsf{\normalsize Филиал}$', available_districts)
                 name = st.text_input(r'$\textsf{\normalsize ФИО}$', '')
-                # surname = st.text_input(r'$\textsf{\normalsize Фамилия}$', '')
-                age = st.number_input(r'$\textsf{\normalsize Возраст}$', value=24, step=1)
+                phone = st.text_input(r'$\textsf{\normalsize Телефон номер}$', value=None, placeholder="928009292")
+
             with col2:
+                # Личные данные
+                age = st.number_input(r'$\textsf{\normalsize Возраст}$', value=24, step=1)
                 gender = st.selectbox(r'$\textsf{\normalsize Пол}$', ['Мужчина', 'Женщина'])
                 marital_status = st.selectbox(r'$\textsf{\normalsize Семейный статус}$', ['Женат/Замужем', 'Не женат/Не замужем', 'Вдова/Вдовец', 'Разведен'])
-                amount = st.number_input(r'$\textsf{\normalsize Сумма рассрочки}$', value=0, placeholder="Телефон нархи")
-                duration = st.selectbox(r'$\textsf{\normalsize Срок}$', [3, 6, 9, 12])
+                dependents = st.selectbox(r'$\textsf{\normalsize Иждивенцы}$', [1, 2, 3, 4, 5])
 
             with col3:
-                phone = st.text_input(r'$\textsf{\normalsize Телефон номер}$', value=None, placeholder="928009292")
+                # Финансовая информация
+                amount = st.number_input(r'$\textsf{\normalsize Сумма рассрочки}$', value=0, placeholder="Телефон нархи")
+                duration = st.selectbox(r'$\textsf{\normalsize Срок}$', [3, 6, 9, 12])
                 credit_history_count = st.number_input(r'$\textsf{\normalsize Количество рассрочки}$', value=0, step=1)
                 kredit = st.selectbox(r'$\textsf{\normalsize Активный кредит в других банках}$', ['Нет', "Да"])
 
             with col4:
+                # Рабочая информация
                 occupation = st.selectbox(r'$\textsf{\normalsize Сфера деятельности}$',
                     ['Торговля', 'Услуги', 'Производство', 'Сельское хозяйство', 'Государственный служащий', 'Частный сектор', 'Другое'])
-                salary_level = st.selectbox(r'$\textsf{\normalsize Уровень зарплаты}$',
-                    ['до 3000', 'от 3000 до 5000', 'от 5000 до 10000', 'от 10000'])
                 work_experience = st.selectbox(r'$\textsf{\normalsize Опыт работы}$',
                     ['Нет опыта', 'до 1 года', 'от 1 до 3 лет', 'от 3 до 5 лет', 'от 5 лет'])
-                dependents = st.selectbox(r'$\textsf{\normalsize Иждивенцы}$', [1, 2, 3, 4, 5])
+                salary_level = st.selectbox(r'$\textsf{\normalsize Уровень зарплаты}$',
+                    ['до 3000', 'от 3000 до 5000', 'от 5000 до 10000', 'от 10000'])
 
             if st.button('Получить результат', type="primary"):
                 current_date = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
