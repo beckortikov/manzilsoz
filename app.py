@@ -106,8 +106,8 @@ if authentication_status:
         }
 
         var = ['Manager', 'district', 'phone', 'name', 'age', 'gender', 'amount', 'duration',
-            'marital_status', 'credit_history_count', 'Result', 'Probability', 'Date', 'DocumentNumber',
-            'occupation', 'salary_level', 'work_experience', 'dependents']
+            'marital_status', 'credit_history_count', 'Result', 'Probability', 'occupation',
+            'salary_level', 'work_experience', 'dependents', 'Date', 'DocumentNumber']
 
         # Add content to the PDF using a table
         pdf.set_fill_color(255, 255, 255)  # Set white fill color
@@ -191,7 +191,7 @@ if authentication_status:
 
             with col3:
                 phone = st.text_input(r'$\textsf{\normalsize Телефон номер}$', value=None, placeholder="928009292")
-                credit_history_count = st.number_input(r'$\textsf{\normalsize Количество рассрочки (история клиента)}$', value=0, step=1)
+                credit_history_count = st.number_input(r'$\textsf{\normalsize Количество рассрочки}$', value=0, step=1)
                 kredit = st.selectbox(r'$\textsf{\normalsize Активный кредит в других банках}$', ['Нет', "Да"])
 
             with col4:
@@ -271,14 +271,15 @@ if authentication_status:
 
             if not headers:
                 headers = ['Менеджер', 'Филиал', 'Телефон номер', 'ФИО', 'Возраст', 'Пол', 'Сумма кредита', 'Период',
-                         'Семейное положение', 'Количество кредитов(история)', 'Результат', 'Вероятность возврата', 'Дата',
-                         'Номер документа', 'Сфера деятельности', 'Уровень зарплаты', 'Опыт работы', 'Иждивенцы']
+                         'Семейное положение', 'Количество кредитов(история)', 'Результат', 'Вероятность возврата',
+                         'Сфера деятельности', 'Уровень зарплаты', 'Опыт работы', 'Иждивенцы', 'Дата',
+                         'Номер документа']
                 worksheet.append_row(headers)
 
             # Convert the new_row DataFrame to a list and append it to the worksheet
             new_row = new_row[['Manager','district', 'phone', 'name', 'age', 'gender', 'amount', 'duration',
-                              'marital_status', "credit_history_count", 'Result', 'Probability', 'Date', 'DocumentNumber',
-                              'occupation', 'salary_level', 'work_experience', 'dependents']]
+                              'marital_status', "credit_history_count", 'Result', 'Probability',
+                              'occupation', 'salary_level', 'work_experience', 'dependents', 'Date', 'DocumentNumber']]
             new_row_list = new_row.values.tolist()
             worksheet.append_rows(new_row_list)
 
