@@ -7,6 +7,7 @@ import streamlit as st
 import pandas as pd
 import joblib
 import gspread
+import time
 
 # Загрузка модели
 
@@ -98,11 +99,16 @@ if authentication_status:
             'Result': 'Результат',
             'Probability': 'Вероятность возврата',
             'Date': 'Дата',
-            'DocumentNumber': 'Номер документа'
+            'DocumentNumber': 'Номер документа',
+            'occupation': 'Сфера деятельности',
+            'salary_level': 'Уровень зарплаты',
+            'work_experience': 'Опыт работы',
+            'dependents': 'Иждивенцы'
         }
 
         var = ['Manager', 'district', 'phone', 'name', 'age', 'gender', 'amount', 'duration',
-            'marital_status', 'credit_history_count', 'Result', 'Probability', 'Date', 'DocumentNumber']
+            'marital_status', 'credit_history_count', 'Result', 'Probability', 'Date', 'DocumentNumber',
+            'occupation', 'salary_level', 'work_experience', 'dependents']
 
         # Add content to the PDF using a table
         pdf.set_fill_color(255, 255, 255)  # Set white fill color
@@ -186,47 +192,59 @@ if authentication_status:
 
             with col3:
                 phone = st.text_input(r'$\textsf{\normalsize Телефон номер}$', value=None, placeholder="928009292")
-
                 credit_history_count = st.number_input(r'$\textsf{\normalsize Количество рассрочки (история клиента)}$', value=0, step=1)
                 kredit = st.selectbox(r'$\textsf{\normalsize Активный кредит в других банках}$', ['Нет', "Да"])
-                if st.button('Получить результат', type="primary"):
-                    current_date = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-                    document_number = f'Doc_{current_date.replace(" ", "_").replace(":", "_")}'
-                    mapping_dis = {
-                    "Душанбе": "dushanbe",
-                    "Худжанд": "khujand",
-                    "Пенджикент": "panjakent",
-                    "Джаббор Расулов": "j.rasulov",
-                    "Спитамен": "spitamen"
-                    }
-                    mapping_mar = {
-                        'Женат/Замужем': 'married', 'Не женат/Не замужем':'single', 'Вдова/Вдовец':'widow/widower', 'Разведен':'divorced'
-                    }
 
-                    input_data = pd.DataFrame({
-                        'age': [age],
-                        'amount': [amount],
-                        'credit_history_count': [credit_history_count],
-                        'district': [mapping_dis[district]],
-                        'duration': [duration],
-                        'gender': [1 if gender == 'Мужчина' else 0],
-                        'marital_status': [mapping_mar[marital_status]],
-                    })
+            with col4:
+                occupation = st.selectbox(r'$\textsf{\normalsize Сфера деятельности}$',
+                    ['Торговля', 'Услуги', 'Производство', 'Сельское хозяйство', 'Государственный служащий', 'Частный сектор', 'Другое'])
+                salary_level = st.selectbox(r'$\textsf{\normalsize Уровень зарплаты}$',
+                    ['до 3000', 'от 3000 до 5000', 'от 5000 до 10000', 'от 10000'])
+                work_experience = st.selectbox(r'$\textsf{\normalsize Опыт работы}$',
+                    ['Нет опыта', 'до 1 года', 'от 1 до 3 лет', 'от 3 до 5 лет', 'от 5 лет'])
+                dependents = st.selectbox(r'$\textsf{\normalsize Иждивенцы}$', [1, 2, 3, 4, 5])
 
-                    prediction = model.predict_proba(input_data)[:, 0]
+            if st.button('Получить результат', type="primary"):
+                current_date = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                document_number = f'Doc_{current_date.replace(" ", "_").replace(":", "_")}'
+                mapping_dis = {
+                "Душанбе": "dushanbe",
+                "Худжанд": "khujand",
+                "Пенджикент": "panjakent",
+                "Джаббор Расулов": "j.rasulov",
+                "Спитамен": "spitamen"
+                }
+                mapping_mar = {
+                    'Женат/Замужем': 'married', 'Не женат/Не замужем':'single', 'Вдова/Вдовец':'widow/widower', 'Разведен':'divorced'
+                }
+
+                input_data = pd.DataFrame({
+                    'age': [age],
+                    'amount': [amount],
+                    'credit_history_count': [credit_history_count],
+                    'district': [mapping_dis[district]],
+                    'duration': [duration],
+                    'gender': [1 if gender == 'Мужчина' else 0],
+                    'marital_status': [mapping_mar[marital_status]],
+                })
+
+                prediction = model.predict_proba(input_data)[:, 0]
 
 
-                    input_data['Manager'] = manager
-                    input_data['district'] = district
-                    input_data['name'] = name
-                    # input_data['surname'] = surname
-                    input_data['phone'] = phone
-                    input_data['Result'] = 'Одобрено' if prediction > 1 - 0.15 else 'Отказано'
-                    input_data['gender'] = gender
-                    input_data['marital_status'] = marital_status
-                    input_data['Probability'] = f'{round(prediction[0]*100, 2)}%'
-                    input_data['Date'] = current_date
-                    input_data['DocumentNumber'] = document_number
+                input_data['Manager'] = manager
+                input_data['district'] = district
+                input_data['name'] = name
+                input_data['phone'] = phone
+                input_data['Result'] = 'Одобрено' if prediction > 1 - 0.15 else 'Отказано'
+                input_data['gender'] = gender
+                input_data['marital_status'] = marital_status
+                input_data['Probability'] = f'{round(prediction[0]*100, 2)}%'
+                input_data['Date'] = current_date
+                input_data['DocumentNumber'] = document_number
+                input_data['occupation'] = occupation
+                input_data['salary_level'] = salary_level
+                input_data['work_experience'] = work_experience
+                input_data['dependents'] = dependents
     with top_right:
         def authenticate_gspread():
             # Load Google Sheets API credentials
@@ -236,59 +254,125 @@ if authentication_status:
             return sa
 
         # Function to duplicate data to Google Sheets
-        def duplicate_to_gsheet(new_row):
-            # Authenticate with Google Sheets
-            gc = authenticate_gspread()
+        def save_to_gsheet(new_row, max_retries=3):
+            for attempt in range(max_retries):
+                try:
+                    # Authenticate with Google Sheets
+                    gc = authenticate_gspread()
 
-            # Create a new Google Sheets spreadsheet
-            sh = gc.open("Manzilsoz")
+                    # Open the spreadsheet
+                    sh = gc.open("Manzilsoz")
 
-            # Select the first sheet (index 0)
-            worksheet = sh.worksheet("ScoringDB")
+                    # Select the first sheet (index 0)
+                    worksheet = sh.worksheet("ScoringDB")
 
-            # Check if there's any content in the worksheet
-            existing_data = worksheet.get_all_values()
+                    # Check if there's any content in the worksheet
+                    existing_data = worksheet.get_all_values()
 
-            # Get existing headers if they exist
-            headers = existing_data[0] if existing_data else None
+                    # Get existing headers if they exist
+                    headers = existing_data[0] if existing_data else None
 
-            if not headers:
-                headers = ['Менеджер', 'Филиал', 'Телефон номер', 'ФИО', 'Возраст', 'Пол', 'Сумма кредита', 'Период', 'Семейное положение', 'Количество кредитов(история)', 'Результат', 'Вероятность возврата', 'Дата', 'Номер документа']
-                worksheet.append_row(headers)
+                    if not headers:
+                        headers = ['Менеджер', 'Филиал', 'Телефон номер', 'ФИО', 'Возраст', 'Пол', 'Сумма кредита', 'Период',
+                                'Семейное положение', 'Количество кредитов(история)', 'Результат', 'Вероятность возврата', 'Дата',
+                                'Номер документа', 'Сфера деятельности', 'Уровень зарплаты', 'Опыт работы', 'Иждивенцы']
+                        worksheet.append_row(headers)
 
-            # Convert the new_row DataFrame to a list and append it to the worksheet
-            new_row = new_row[['Manager','district', 'phone', 'name', 'age', 'gender', 'amount', 'duration', 'marital_status', "credit_history_count",
-                                'Result', 'Probability', 'Date', 'DocumentNumber']]
-            new_row_list = new_row.values.tolist()
-            worksheet.append_rows(new_row_list)
+                    # Convert the new_row DataFrame to a list and append it to the worksheet
+                    new_row = new_row[['Manager','district', 'phone', 'name', 'age', 'gender', 'amount', 'duration',
+                                    'marital_status', "credit_history_count", 'Result', 'Probability', 'Date', 'DocumentNumber',
+                                    'occupation', 'salary_level', 'work_experience', 'dependents']]
+                    new_row_list = new_row.values.tolist()
+                    worksheet.append_rows(new_row_list)
+                    return True
+                except Exception as e:
+                    if attempt == max_retries - 1:  # Last attempt
+                        st.error(f"Ошибка при сохранении данных: {str(e)}")
+                        # Сохраняем данные локально в случае ошибки
+                        backup_file = f"backup_data_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+                        new_row.to_csv(backup_file, index=False)
+                        st.warning(f"Данные сохранены локально в файл: {backup_file}")
+                        return False
+                    time.sleep(2)  # Wait before retrying
+            return False
 
-        # Предсказание
-        st.subheader('Результат:')
-        if kredit is not None:
-            if kredit == "Да":
-                st.error(r'$\textsf{\Large Отказано! 😞}$')
-            else:
-                if prediction is not None:
+        if st.button('Получить результат', type="primary"):
+            try:
+                current_date = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                document_number = f'Doc_{current_date.replace(" ", "_").replace(":", "_")}'
+                mapping_dis = {
+                "Душанбе": "dushanbe",
+                "Худжанд": "khujand",
+                "Пенджикент": "panjakent",
+                "Джаббор Расулов": "j.rasulov",
+                "Спитамен": "spitamen"
+                }
+                mapping_mar = {
+                    'Женат/Замужем': 'married', 'Не женат/Не замужем':'single', 'Вдова/Вдовец':'widow/widower', 'Разведен':'divorced'
+                }
+
+                input_data = pd.DataFrame({
+                    'age': [age],
+                    'amount': [amount],
+                    'credit_history_count': [credit_history_count],
+                    'district': [mapping_dis[district]],
+                    'duration': [duration],
+                    'gender': [1 if gender == 'Мужчина' else 0],
+                    'marital_status': [mapping_mar[marital_status]],
+                })
+
+                prediction = model.predict_proba(input_data)[:, 0]
+
+                # Prepare data for saving
+                input_data['Manager'] = manager
+                input_data['district'] = district
+                input_data['name'] = name
+                input_data['phone'] = phone
+                input_data['Result'] = 'Одобрено' if prediction > 1 - 0.15 else 'Отказано'
+                input_data['gender'] = gender
+                input_data['marital_status'] = marital_status
+                input_data['Probability'] = f'{round(prediction[0]*100, 2)}%'
+                input_data['Date'] = current_date
+                input_data['DocumentNumber'] = document_number
+                input_data['occupation'] = occupation
+                input_data['salary_level'] = salary_level
+                input_data['work_experience'] = work_experience
+                input_data['dependents'] = dependents
+
+                # Save data first
+                save_success = save_to_gsheet(input_data)
+
+                # Then show results and generate PDF
+                if kredit == "Да":
+                    st.error(r'$\textsf{\Large Отказано! 😞}$')
+                else:
                     st.write(f'Вероятность возврата: {round(prediction[0]*100, 2)}%')
                     if prediction > 1 - 0.15:
                         if_success="Одобрено!"
                         htmlstr1=f"""<p style='background-color:green;
-                                                                color:white;
-                                                                font-size:35px;
-                                                                border-radius:3px;
-                                                                line-height:60px;
-                                                                padding-left:17px;
-                                                                opacity:0.6'>
-                                                                {if_success}</style>
-                                                                <br></p>"""
+                                                            color:white;
+                                                            font-size:35px;
+                                                            border-radius:3px;
+                                                            line-height:60px;
+                                                            padding-left:17px;
+                                                            opacity:0.6'>
+                                                            {if_success}</style>
+                                                            <br></p>"""
                         st.markdown(htmlstr1,unsafe_allow_html=True)
-                        # st.success(r'$\textsf{\Large }$')
                         st.balloons()
-                        generate_pdf(input_data, document_number, current_date)
-                        duplicate_to_gsheet(input_data)
                     else:
                         st.error(r'$\textsf{\Large Отказано! 😞}$')
-                        generate_pdf(input_data, document_number, current_date)
-                        duplicate_to_gsheet(input_data)
 
-                    # generate_pdf(input_data, document_number, current_date)
+                # Generate PDF after showing results
+                try:
+                    generate_pdf(input_data, document_number, current_date)
+                except Exception as e:
+                    st.error(f"Ошибка при генерации PDF: {str(e)}")
+
+            except Exception as e:
+                st.error(f"Произошла ошибка: {str(e)}")
+                # Attempt to save data even if other operations fail
+                if 'input_data' in locals():
+                    backup_file = f"error_backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+                    input_data.to_csv(backup_file, index=False)
+                    st.warning(f"Данные сохранены локально в файл: {backup_file}")
