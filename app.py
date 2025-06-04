@@ -10,21 +10,101 @@ import gspread
 import time
 
 # Загрузка модели
-
 model = joblib.load('model.pkl')
 
+def authenticate_gspread():
+    # Load Google Sheets API credentials
+    from read_json import response_json
+    response_ = response_json()
+    sa = gspread.service_account_from_dict(response_)
+    return sa
 
-# Функция для генерации PDF
-from datetime import datetime
-from fpdf import FPDF
-from PIL import Image
+# Function to save data to Google Sheets
+def save_to_gsheet(new_row, max_retries=3):
+    for attempt in range(max_retries):
+        try:
+            # Authenticate with Google Sheets
+            gc = authenticate_gspread()
 
+            # Open the spreadsheet
+            sh = gc.open("Manzilsoz")
+            worksheet = sh.worksheet("ScoringDB")
 
+            # Check if there's any content in the worksheet
+            existing_data = worksheet.get_all_values()
+
+            # Get existing headers if they exist
+            headers = existing_data[0] if existing_data else None
+
+            if not headers:
+                headers = ['Менеджер', 'Филиал', 'Телефон номер', 'ФИО', 'Возраст', 'Пол', 'Сумма кредита', 'Период',
+                        'Семейное положение', 'Количество кредитов(история)', 'Результат', 'Вероятность возврата', 'Дата',
+                        'Номер документа', 'Сфера деятельности', 'Уровень зарплаты', 'Опыт работы', 'Иждивенцы']
+                worksheet.append_row(headers)
+
+            # Convert the new_row DataFrame to a list and append it to the worksheet
+            new_row = new_row[['Manager','district', 'phone', 'name', 'age', 'gender', 'amount', 'duration',
+                            'marital_status', "credit_history_count", 'Result', 'Probability', 'Date', 'DocumentNumber',
+                            'occupation', 'salary_level', 'work_experience', 'dependents']]
+            new_row_list = new_row.values.tolist()
+            worksheet.append_rows(new_row_list)
+            return True
+        except Exception as e:
+            if attempt == max_retries - 1:  # Last attempt
+                st.error(f"Ошибка при сохранении данных: {str(e)}")
+                return False
+            time.sleep(2)  # Wait before retrying
+    return False
 
 st.set_page_config(
-        page_title="Kredit Market",
-        layout="wide"
+    page_title="Kredit Market",
+    layout="wide"
 )
+
+# Улучшенные стили
+st.markdown("""
+    <style>
+        section[data-testid="stSidebar"] {
+            width: 40px !important;
+            background-color: white;
+        }
+        .block-container {
+            padding-top: 1rem;
+            padding-bottom: 0rem;
+            padding-left: 5rem;
+            padding-right: 5rem;
+        }
+        .stSelectbox {
+            margin-bottom: 1rem;
+        }
+        .stNumberInput {
+            margin-bottom: 1rem;
+        }
+        .stTextInput {
+            margin-bottom: 1rem;
+        }
+        div[data-testid="stVerticalBlock"] > div {
+            padding: 0.5rem;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+            margin-bottom: 0.5rem;
+        }
+        button[kind="primary"] {
+            background-color: #ff4b4b;
+            color: white;
+            border-radius: 5px;
+            padding: 0.5rem 2rem;
+            margin-top: 1rem;
+        }
+        .stAlert {
+            background-color: #f8d7da;
+            color: #721c24;
+            padding: 1rem;
+            border-radius: 5px;
+            margin-bottom: 1rem;
+        }
+    </style>
+""", unsafe_allow_html=True)
 
 names = ["Болтабоев Аслиддин", "Файзиев Тимур"]
 usernames = ["aslidin", "timur"]
@@ -45,177 +125,70 @@ if authentication_status == False:
 if authentication_status == None:
     st.warning("Please enter your username and password")
 
-
 if authentication_status:
-    st.markdown(
-    """
-    <style>
-        section[data-testid="stSidebar"] {
-            width: 40px important;
-            background-color: white;
-        }
-        .block-container {
-                    padding-top: 1rem;
-                    padding-bottom: 0rem;
-                    padding-left: 5rem;
-                    padding-right: 5rem;
-                }
-    </style>
-    """,
-    unsafe_allow_html=True,
-)
     authenticator.logout("Выход", "sidebar")
-    def generate_pdf(data, document_number, date):
-        # Create instance of FPDF class
-        pdf = FPDF()
-
-        # Add a page
-        pdf.add_page()
-
-        # Set font for the title
-        pdf.add_font('DejaVu', '', 'DejaVuSansCondensed.ttf', uni=True)
-        pdf.set_font('DejaVu', '', 14)
-
-        pdf.image('logo manzilsoz.png', x=15, y=15, w=40)
-        pdf.ln(20)
-        # Title
-        pdf.cell(200, 10, txt="Скоринг рассрочки",  ln=True, align='C')
-        pdf.ln(10)  # Add a little space after the title
-
-
-        # Define the variables list on the left side
-        # Mapping between internal variable names and human-readable names
-        variable_mapping = {
-            'Manager': 'Менеджер',
-            'district': 'Филиал',
-            'phone': 'Телефон номер',
-            'name': 'ФИО',
-            'age': 'Возраст',
-            'gender': 'Пол',
-            'amount': 'Сумма рассрочки',
-            'duration': 'Срок',
-            'marital_status': 'Семейное положение',
-            'credit_history_count': 'Количество кредитов(история)',
-            'Result': 'Результат',
-            'Probability': 'Вероятность возврата',
-            'Date': 'Дата',
-            'DocumentNumber': 'Номер документа',
-            'occupation': 'Сфера деятельности',
-            'salary_level': 'Уровень зарплаты',
-            'work_experience': 'Опыт работы',
-            'dependents': 'Иждивенцы'
-        }
-
-        var = ['Manager', 'district', 'phone', 'name', 'age', 'gender', 'amount', 'duration',
-            'marital_status', 'credit_history_count', 'Result', 'Probability', 'Date', 'DocumentNumber',
-            'occupation', 'salary_level', 'work_experience', 'dependents']
-
-        # Add content to the PDF using a table
-        pdf.set_fill_color(255, 255, 255)  # Set white fill color
-        col_width = 80
-        row_height = 10
-        x_position = (pdf.w - col_width * 2) / 2  # Calculate x position to center the table
-        y_position = pdf.get_y()
-        for var_name in var:
-            # Get the human-readable name corresponding to the internal variable name
-            variable = variable_mapping.get(var_name, '')
-            value = data.get(var_name, [''])[0]  # Get the value from data or empty string if not found
-            pdf.set_xy(x_position, y_position)
-            pdf.cell(col_width, row_height, txt=variable, border=1, fill=False)
-            pdf.cell(col_width, row_height, txt=str(value), border=1, fill=False)
-            pdf.ln(row_height)
-            y_position = pdf.get_y()
-        pdf.set_xy(x_position, pdf.get_y() + 20)  # Move down 10 units
-        pdf.cell(col_width, row_height, txt="Менеджер:", border=0, fill=False)
-        pdf.cell(col_width, row_height, txt="Директор:", border=0, fill=False)
-
-        # current_x = pdf.get_x()  # Get current X position
-        # current_y = pdf.get_y()  # Get current Y position
-
-        # # Calculate new positions with desired margins
-        # new_x = current_x -100 # Add 20mm to the right
-        # new_y = current_y + 15   # Subtract 5mm from the top (moving upwards)
-
-        # # Set new position
-        # pdf.set_xy(new_x, new_y)
-        # pdf.cell(0, 10, 'Менеджер:', 0, 0, 'L')
-        # pdf.cell(0, 10, 'Директор:', 0, 0, 'C')
-        # Output the cell
-        # pdf.cell(0, 10, txt="Подпись: ______________________", ln=True, align='R')
-
-        # Save the PDF to a file
-        pdf.output("result.pdf")
-
-        # Return the PDF file name or content depending on your requirement
-        with open("result.pdf", "rb") as pdf_file:
-            PDFbyte = pdf_file.read()
-
-        st.download_button(label="Скачать документ",
-                        data=PDFbyte,
-                        file_name="test.pdf",
-                        mime='application/octet-stream')
-
     st.image("logo manzilsoz.png", use_column_width=False, width=150)
-    # Ввод данных с использованием инпутов
     st.title('Модель скоринга')
 
+    # Создаем 4 колонки для более компактного размещения
+    col1, col2, col3, col4 = st.columns(4)
 
-    top_left, top_right = st.columns((3, 1))
-    prediction = None
-    input_data = None
-    document_number = None
-    current_date = None
-    kredit = None
-    with top_left:
-            col1, col2, col3, col4 = st.columns(4)
-            with col1:
-                manager = st.selectbox(r'$\textsf{\normalsize Менеджер}$', [name])
+    with col1:
+        manager = st.selectbox('Менеджер', [name])
+        district_options = {
+            "Болтабоев Аслиддин": ["Джаббор Расулов", "Спитамен"],
+            "Файзиев Тимур": ["Джаббор Расулов", "Спитамен"]
+        }
+        available_districts = district_options.get(manager, ["Душанбе"])
+        district = st.selectbox('Филиал', available_districts)
+        name_input = st.text_input('ФИО', '')
+        age = st.number_input('Возраст', value=24, step=1)
 
-                # Определяем доступные филиалы для каждого менеджера
-                district_options = {
-                    "Болтабоев Аслиддин": ["Джаббор Расулов", "Спитамен"],
-                    "Файзиев Тимур": ["Джаббор Расулов", "Спитамен"]
-                }
+    with col2:
+        gender = st.selectbox('Пол', ['Мужчина', 'Женщина'])
+        marital_status = st.selectbox('Семейный статус',
+            ['Женат/Замужем', 'Не женат/Не замужем', 'Вдова/Вдовец', 'Разведен'])
+        amount = st.number_input('Сумма рассрочки', value=0,
+            help="Введите сумму рассрочки")
+        duration = st.selectbox('Срок', [3, 6, 9, 12])
 
-                # Получаем список доступных филиалов для текущего менеджера
-                available_districts = district_options.get(manager, ["Душанбе"])
+    with col3:
+        phone = st.text_input('Телефон номер', value=None,
+            placeholder="928009292")
+        credit_history_count = st.number_input(
+            'Количество рассрочки (история клиента)', value=0, step=1)
+        kredit = st.selectbox('Активный кредит в других банках',
+            ['Нет', "Да"])
+        occupation = st.selectbox('Сфера деятельности',
+            ['Торговля', 'Услуги', 'Производство', 'Сельское хозяйство',
+             'Государственный служащий', 'Частный сектор', 'Другое'])
 
-                district = st.selectbox(r'$\textsf{\normalsize Филиал}$', available_districts)
-                name = st.text_input(r'$\textsf{\normalsize ФИО}$', '')
-                # surname = st.text_input(r'$\textsf{\normalsize Фамилия}$', '')
-                age = st.number_input(r'$\textsf{\normalsize Возраст}$', value=24, step=1)
-            with col2:
-                gender = st.selectbox(r'$\textsf{\normalsize Пол}$', ['Мужчина', 'Женщина'])
-                marital_status = st.selectbox(r'$\textsf{\normalsize Семейный статус}$', ['Женат/Замужем', 'Не женат/Не замужем', 'Вдова/Вдовец', 'Разведен'])
-                amount = st.number_input(r'$\textsf{\normalsize Сумма рассрочки}$', value=0, placeholder="Телефон нархи")
-                duration = st.selectbox(r'$\textsf{\normalsize Срок}$', [3, 6, 9, 12])
+    with col4:
+        salary_level = st.selectbox('Уровень зарплаты',
+            ['до 3000', 'от 3000 до 5000', 'от 5000 до 10000', 'от 10000'])
+        work_experience = st.selectbox('Опыт работы',
+            ['Нет опыта', 'до 1 года', 'от 1 до 3 лет', 'от 3 до 5 лет', 'от 5 лет'])
+        dependents = st.selectbox('Иждивенцы', [1, 2, 3, 4, 5])
 
-            with col3:
-                phone = st.text_input(r'$\textsf{\normalsize Телефон номер}$', value=None, placeholder="928009292")
-                credit_history_count = st.number_input(r'$\textsf{\normalsize Количество рассрочки (история клиента)}$', value=0, step=1)
-                kredit = st.selectbox(r'$\textsf{\normalsize Активный кредит в других банках}$', ['Нет', "Да"])
-
-            with col4:
-                occupation = st.selectbox(r'$\textsf{\normalsize Сфера деятельности}$',
-                    ['Торговля', 'Услуги', 'Производство', 'Сельское хозяйство', 'Государственный служащий', 'Частный сектор', 'Другое'])
-                salary_level = st.selectbox(r'$\textsf{\normalsize Уровень зарплаты}$',
-                    ['до 3000', 'от 3000 до 5000', 'от 5000 до 10000', 'от 10000'])
-                work_experience = st.selectbox(r'$\textsf{\normalsize Опыт работы}$',
-                    ['Нет опыта', 'до 1 года', 'от 1 до 3 лет', 'от 3 до 5 лет', 'от 5 лет'])
-                dependents = st.selectbox(r'$\textsf{\normalsize Иждивенцы}$', [1, 2, 3, 4, 5])
-
-            if st.button('Рассчитать скоринг', type="primary"):
+    # Центрируем кнопку
+    col1, col2, col3 = st.columns([1,1,1])
+    with col2:
+        if st.button('Рассчитать скоринг', type="primary"):
+            try:
                 current_date = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                 document_number = f'Doc_{current_date.replace(" ", "_").replace(":", "_")}'
                 mapping_dis = {
-                "Душанбе": "dushanbe",
-                "Худжанд": "khujand",
-                "Пенджикент": "panjakent",
-                "Джаббор Расулов": "j.rasulov",
-                "Спитамен": "spitamen"
+                    "Душанбе": "dushanbe",
+                    "Худжанд": "khujand",
+                    "Пенджикент": "panjakent",
+                    "Джаббор Расулов": "j.rasulov",
+                    "Спитамен": "spitamen"
                 }
                 mapping_mar = {
-                    'Женат/Замужем': 'married', 'Не женат/Не замужем':'single', 'Вдова/Вдовец':'widow/widower', 'Разведен':'divorced'
+                    'Женат/Замужем': 'married',
+                    'Не женат/Не замужем':'single',
+                    'Вдова/Вдовец':'widow/widower',
+                    'Разведен':'divorced'
                 }
 
                 input_data = pd.DataFrame({
@@ -230,10 +203,10 @@ if authentication_status:
 
                 prediction = model.predict_proba(input_data)[:, 0]
 
-
+                # Prepare data for saving
                 input_data['Manager'] = manager
                 input_data['district'] = district
-                input_data['name'] = name
+                input_data['name'] = name_input
                 input_data['phone'] = phone
                 input_data['Result'] = 'Одобрено' if prediction > 1 - 0.15 else 'Отказано'
                 input_data['gender'] = gender
@@ -251,30 +224,23 @@ if authentication_status:
 
                 # Then show results and generate PDF
                 if kredit == "Да":
-                    st.error(r'$\textsf{\Large Отказано! 😞}$')
+                    st.error('Отказано! 😞')
                 else:
                     st.write(f'Вероятность возврата: {round(prediction[0]*100, 2)}%')
                     if prediction > 1 - 0.15:
-                        if_success="Одобрено!"
-                        htmlstr1=f"""<p style='background-color:green;
-                                                            color:white;
-                                                            font-size:35px;
-                                                            border-radius:3px;
-                                                            line-height:60px;
-                                                            padding-left:17px;
-                                                            opacity:0.6'>
-                                                            {if_success}</style>
-                                                            <br></p>"""
-                        st.markdown(htmlstr1,unsafe_allow_html=True)
+                        st.success('Одобрено! 🎉')
                         st.balloons()
                     else:
-                        st.error(r'$\textsf{\Large Отказано! 😞}$')
+                        st.error('Отказано! 😞')
 
                 # Generate PDF after showing results
                 try:
                     generate_pdf(input_data, document_number, current_date)
                 except Exception as e:
                     st.error(f"Ошибка при генерации PDF: {str(e)}")
+
+            except Exception as e:
+                st.error(f"Произошла ошибка: {str(e)}")
 
     with top_right:
         def authenticate_gspread():
